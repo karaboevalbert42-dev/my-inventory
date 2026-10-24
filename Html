@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111318">
+<title>Мой склад</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#111318; --panel:#1b1e25; --panel2:#242833;
+  --text:#f5f6fa; --muted:#9299aa; --line:#303542;
+  --accent:#a7f36b; --accentText:#17200e;
+  --red:#ff7777; --blue:#8dbaff; --yellow:#ffd477;
+  --radius:18px;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+button,input,select,textarea { font:inherit; }
+button { cursor:pointer; }
+.app { max-width:700px; margin:auto; padding:20px 16px 105px; }
+.top { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.eyebrow { color:var(--muted); font-size:12px; letter-spacing:1.5px; text-transform:uppercase; }
+h1 { margin:6px 0 4px; font-size:28px; letter-spacing:-1px; }
+h2 { font-size:19px; margin:0; }
+h3 { font-size:15px; margin:0; }
+.sub { color:var(--muted); font-size:13px; }
+.avatar {
+  width:46px;height:46px;border-radius:15px;background:var(--accent);
+  color:#18220e;display:grid;place-items:center;font-size:23px;
+}
+.stats { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0; }
+.stat,.panel { background:var(--panel);border:1px solid var(--line);border-radius:var(--radius); }
+.stat { padding:16px;min-width:0; }
+.stat .label { font-size:12px;color:var(--muted);margin-bottom:12px; }
+.stat .value { font-size:23px;font-weight:750;letter-spacing:-.7px;overflow-wrap:anywhere; }
+.stat .hint { color:var(--muted);font-size:11px;margin-top:7px; }
+.green { color:var(--accent)!important; }
+.red { color:var(--red)!important; }
+.section-head { display:flex;justify-content:space-between;align-items:center;gap:10px;margin:27px 0 14px; }
+.btn {
+  border:0;border-radius:12px;padding:12px 15px;font-weight:650;
+  background:var(--accent);color:var(--accentText);
+}
+.btn.secondary { background:var(--panel2);color:var(--text);border:1px solid var(--line); }
+.btn.small { padding:9px 12px;font-size:12px; }
+.btn.full { width:100%; }
+.search {
+  width:100%;padding:14px 15px;border-radius:13px;border:1px solid var(--line);
+  background:var(--panel);color:var(--text);outline:none;margin-bottom:10px;
+}
+.filters { display:flex;gap:8px;overflow:auto;padding:1px 0 12px; }
+.chip {
+  flex-shrink:0;padding:9px 13px;border:1px solid var(--line);border-radius:30px;
+  background:var(--panel);color:var(--muted);font-size:12px;
+}
+.chip.active { background:var(--accent);color:var(--accentText);border-color:var(--accent); }
+.item {
+  display:flex;gap:13px;padding:13px;margin-bottom:10px;
+  background:var(--panel);border:1px solid var(--line);border-radius:17px;
+}
+.photo {
+  width:83px;height:100px;flex-shrink:0;border-radius:12px;background:var(--panel2);
+  display:grid;place-items:center;font-size:30px;overflow:hidden;
+}
+.photo img { width:100%;height:100%;object-fit:cover; }
+.item-main { min-width:0;flex:1; }
+.item-top { display:flex;justify-content:space-between;align-items:flex-start;gap:7px; }
+.item-name { font-size:15px;font-weight:700;overflow-wrap:anywhere; }
+.badge {
+  display:inline-block;padding:5px 8px;border-radius:7px;font-size:10px;
+  background:var(--panel2);color:var(--muted);white-space:nowrap;
+}
+.badge.sold { color:var(--accent); }
+.badge.booked { color:var(--yellow); }
+.badge.return { color:var(--red); }
+.item-meta { color:var(--muted);font-size:12px;margin:7px 0;line-height:1.5; }
+.item-bottom { display:flex;justify-content:space-between;align-items:end;gap:8px; }
+.profit { font-weight:750;font-size:15px; }
+.roi { font-size:11px;color:var(--muted);margin-top:3px; }
+.item-actions { display:flex;gap:6px;margin-top:9px;flex-wrap:wrap; }
+.icon-btn {
+  border:1px solid var(--line);background:var(--panel2);color:var(--text);
+  border-radius:9px;padding:7px 9px;font-size:12px;
+}
+.empty { text-align:center;padding:40px 15px;color:var(--muted); }
+.empty div { font-size:36px;margin-bottom:12px; }
+.page { display:none; }
+.page.active { display:block; }
+.panel { padding:17px;margin-bottom:12px; }
+.row { display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line); }
+.row:last-child { border-bottom:0; }
+.row .name { color:var(--muted);font-size:13px; }
+.row .number { font-weight:700;text-align:right; }
+.bar { height:7px;background:var(--panel2);border-radius:8px;overflow:hidden;margin:9px 0 15px; }
+.bar > div { height:100%;background:var(--accent);border-radius:8px; }
+.nav {
+  position:fixed;bottom:0;left:0;right:0;z-index:5;
+  padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+  background:var(--bg);border-top:1px solid var(--line);
+  display:flex;justify-content:center;gap:5px;
+}
+.nav button {
+  flex:1;max-width:160px;background:transparent;border:0;color:var(--muted);
+  padding:8px 4px;border-radius:12px;font-size:11px;
+}
+.nav button span { display:block;font-size:20px;margin-bottom:4px; }
+.nav button.active { color:var(--accent);background:var(--panel); }
+.modal {
+  display:none;position:fixed;inset:0;z-index:10;background:#0009;
+  align-items:flex-end;justify-content:center;
+}
+.modal.open { display:flex; }
+.sheet {
+  width:100%;max-width:700px;max-height:92dvh;overflow:auto;
+  background:var(--bg);border:1px solid var(--line);border-radius:24px 24px 0 0;
+  padding:22px 17px calc(22px + env(safe-area-inset-bottom));
+}
+.sheet-head { display:flex;justify-content:space-between;align-items:center;margin-bottom:18px; }
+.close { background:var(--panel2);color:var(--text);border:0;border-radius:10px;padding:8px 12px; }
+.form-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.field { display:flex;flex-direction:column;gap:7px;min-width:0; }
+.field.wide { grid-column:1/-1; }
+.field label { color:var(--muted);font-size:12px; }
+.field input,.field select,.field textarea {
+  width:100%;min-width:0;padding:12px;border-radius:11px;
+  border:1px solid var(--line);background:var(--panel);color:var(--text);
+}
+.field textarea { resize:vertical;min-height:65px; }
+.form-actions { display:flex;gap:9px;margin-top:18px; }
+.form-actions button { flex:1; }
+.notice { color:var(--muted);font-size:11px;line-height:1.5;margin-top:15px; }
+@media(min-width:560px) {
+  .stats { grid-template-columns:repeat(4,1fr); }
+  .stat { padding:13px; }
+  .stat .value { font-size:20px; }
+  .modal { align-items:center;padding:16px; }
+  .sheet { border-radius:24px;max-height:90dvh; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="eyebrow">PERSONAL INVENTORY</div>
+      <h1>Мой склад<span class="green">.</span></h1>
+      <div class="sub" id="today"></div>
+    </div>
+    <div class="avatar">📦</div>
+  </header>
+
+  <section class="stats">
+    <div class="stat"><div class="label">Стоимость склада</div><div class="value" id="stockValue">€0</div><div class="hint">Вещи не проданы</div></div>
+    <div class="stat"><div class="label">Прибыль</div><div class="value green" id="totalProfit">€0</div><div class="hint">По завершённым продажам</div></div>
+    <div class="stat"><div class="label">В наличии</div><div class="value" id="stockCount">0</div><div class="hint">Активные позиции</div></div>
+    <div class="stat"><div class="label">Продано</div><div class="value" id="soldCount">0</div><div class="hint">Количество вещей</div></div>
+  </section>
+
+  <main>
+    <section class="page active" id="inventoryPage">
+      <div class="section-head">
+        <div><h2>Твои вещи</h2><div class="sub" id="countLabel" style="margin-top:5px">Каталог товаров</div></div>
+        <button class="btn" onclick="openAdd()">＋ Добавить</button>
+      </div>
+      <input id="search" class="search" placeholder="⌕  Название, партия, размер..." oninput="renderItems()">
+      <div class="filters" id="filters">
+        <button class="chip active" data-filter="Все">Все</button>
+        <button class="chip" data-filter="Ищу покупателя">В наличии</button>
+        <button class="chip" data-filter="Забронирован">Бронь</button>
+        <button class="chip" data-filter="Продан">Продано</button>
+        <button class="chip" data-filter="Возврат">Возвраты</button>
+      </div>
+      <div id="items"></div>
+      <div class="notice">Демонстрационная версия. Данные хранятся в этом браузере и пока не синхронизируются с Google Таблицей.</div>
+    </section>
+
+    <section class="page" id="analyticsPage">
+      <div class="section-head"><div><h2>Аналитика</h2><div class="sub" style="margin-top:5px">Результаты твоего магазина</div></div></div>
+      <div class="panel">
+        <div class="eyebrow">ФИНАНСЫ</div>
+        <div class="row"><span class="name">Вложено в товары</span><span class="number" id="invested">€0</span></div>
+        <div class="row"><span class="name">Выручка от продаж</span><span class="number" id="revenue">€0</span></div>
+        <div class="row"><span class="name">Прибыль от продаж</span><span class="number green" id="analyticsProfit">€0</span></div>
+        <div class="row"><span class="name">Средний ROI проданных</span><span class="number" id="avgRoi">0%</span></div>
+      </div>
+      <div class="panel">
+        <h3>Статусы товаров</h3>
+        <div id="statusStats" style="margin-top:16px"></div>
+      </div>
+      <div class="panel">
+        <h3>Партии</h3>
+        <div id="batchStats" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <section class="page" id="settingsPage">
+      <div class="section-head"><h2>Настройки</h2></div>
+      <div class="panel">
+        <h3>Хранилище</h3>
+        <p class="sub">Сейчас используется локальный режим для проверки интерфейса.</p>
+        <div class="row"><span class="name">Товаров в каталоге</span><span class="number" id="settingsCount">0</span></div>
+        <div class="row"><span class="name">Режим</span><span class="number">Демо</span></div>
+        <p class="notice">После подключения Google Apps Script товары будут загружаться из твоей таблицы. Не публикуй токены и пароли в GitHub.</p>
+      </div>
+      <div class="panel">
+        <h3>Данные</h3>
+        <p class="sub">Можно очистить локальный каталог и начать заново.</p>
+        <button class="btn secondary full" onclick="resetDemo()">Сбросить демо-данные</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="nav">
+  <button class="active" data-page="inventoryPage"><span>▦</span>Каталог</button>
+  <button data-page="analyticsPage"><span>◔</span>Аналитика</button>
+  <button data-page="settingsPage"><span>⚙</span>Настройки</button>
+</nav>
+
+<div class="modal" id="productModal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="modalTitle">Новая вещь</h2><button class="close" onclick="closeModal()">✕</button></div>
+    <form id="productForm">
+      <input type="hidden" id="productId">
+      <div class="form-grid">
+        <div class="field wide"><label for="name">Название товара *</label><input id="name" required placeholder="Например, Nike Tech Fleece"></div>
+        <div class="field"><label for="category">Категория</label><select id="category"><option>Одежда</option><option>Обувь</option><option>Аксессуары</option><option>Другое</option></select></div>
+        <div class="field"><label for="size">Размер</label><input id="size" placeholder="M, L, 42..."></div>
+        <div class="field"><label for="batch">Партия</label><input id="batch" placeholder="Партия 1"></div>
+        <div class="field"><label for="status">Статус</label><select id="status"><option>Ищу покупателя</option><option>Забронирован</option><option>Продан</option><option>Отменён</option><option>Возврат</option></select></div>
+        <div class="field"><label for="buy">Закупка (€)</label><input id="buy" type="number" min="0" step=".01" value="0"></div>
+        <div class="field"><label for="shipping">Доставка (€)</label><input id="shipping" type="number" min="0" step=".01" value="0"></div>
+        <div class="field"><label for="other">Прочие расходы (€)</label><input id="other" type="number" min="0" step=".01" value="0"></div>
+        <div class="field"><label for="sell">Цена продажи (€)</label><input id="sell" type="number" min="0" step=".01" value="0"></div>
+        <div class="field wide"><label for="photo">Ссылка на фото</label><input id="photo" type="url" placeholder="https://..."></div>
+        <div class="field wide"><label for="listing">Ссылка на объявление</label><input id="listing" type="url" placeholder="https://..."></div>
+      </div>
+      <div class="panel" style="margin-top:15px;margin-bottom:0">
+        <div class="row"><span class="name">Себестоимость</span><span class="number" id="previewCost">€0</span></div>
+        <div class="row"><span class="name">Прибыль</span><span class="number green" id="previewProfit">€0</span></div>
+        <div class="row"><span class="name">ROI</span><span class="number" id="previewRoi">0%</span></div>
+      </div>
+      <div class="form-actions"><button type="button" class="btn secondary" onclick="closeModal()">Отмена</button><button class="btn" type="submit">Сохранить</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const money = n => new Intl.NumberFormat('ru-RU',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(n || 0);
+const num = id => Math.max(0, Number($(id).value) || 0);
+const statuses = ['Ищу покупателя','Забронирован','Продан','Отменён','Возврат'];
+let currentFilter = 'Все';
+
+const demoItems = [
+  {id:'1',name:'Nike Tech Fleece',category:'Одежда',size:'M',batch:'Партия 1',buy:35,shipping:5,other:2,sell:75,status:'Продан',photo:'',listing:'',date:'2026-10-10'},
+  {id:'2',name:'Adidas Campus 00s',category:'Обувь',size:'42',batch:'Партия 1',buy:45,shipping:6,other:0,sell:0,status:'Ищу покупателя',photo:'',listing:''},
+  {id:'3',name:'Carhartt Jacket',category:'Одежда',size:'L',batch:'Партия 2',buy:28,shipping:4,other:2,sell:65,status:'Забронирован',photo:'',listing:''},
+  {id:'4',name:'New Balance 2002R',category:'Обувь',size:'43',batch:'Партия 2',buy:50,shipping:6,other:0,sell:0,status:'Ищу покупателя',photo:'',listing:''}
+];
+
+function loadItems(){
+  try {
+    const saved = localStorage.getItem('inventory-demo-v1');
+    return saved === null ? demoItems.map(x=>({...x})) : JSON.parse(saved);
+  } catch { return demoItems.map(x=>({...x})); }
+}
+let products = loadItems();
+function save(){ localStorage.setItem('inventory-demo-v1',JSON.stringify(products)); }
+function cost(p){ return (+p.buy||0)+(+p.shipping||0)+(+p.other||0); }
+function profit(p){ return (+p.sell||0)-cost(p); }
+function roi(p){ return cost(p)>0 ? profit(p)/cost(p)*100 : 0; }
+function isSold(p){ return p.status==='Продан'; }
+function isStock(p){ return ['Ищу покупателя','Забронирован'].includes(p.status); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function updateStats(){
+  const sold=products.filter(isSold), stock=products.filter(isStock);
+  $('stockValue').textContent=money(stock.reduce((a,p)=>a+cost(p),0));
+  $('totalProfit').textContent=money(sold.reduce((a,p)=>a+profit(p),0));
+  $('stockCount').textContent=stock.length;
+  $('soldCount').textContent=sold.length;
+  $('invested').textContent=money(products.reduce((a,p)=>a+cost(p),0));
+  $('revenue').textContent=money(sold.reduce((a,p)=>a+(+p.sell||0),0));
+  $('analyticsProfit').textContent=money(sold.reduce((a,p)=>a+profit(p),0));
+  $('avgRoi').textContent=(sold.length ? sold.reduce((a,p)=>a+roi(p),0)/sold.length : 0).toFixed(1)+'%';
+  $('settingsCount').textContent=products.length;
+  $('countLabel').textContent=products.length+' товаров';
+  renderAnalytics();
+}
+function renderItems(){
+  const q=$('search').value.trim().toLowerCase();
+  const filtered=products.filter(p=>(currentFilter==='Все'||p.status===currentFilter)&&
+    [p.name,p.category,p.size,p.batch,p.status].some(v=>String(v||'').toLowerCase().includes(q)));
+  $('items').innerHTML=filtered.length ? filtered.map(p=>{
+    const badge=p.status==='Продан'?'sold':p.status==='Забронирован'?'booked':p.status==='Возврат'?'return':'';
+    const picture=p.photo && /^https?:\/\//i.test(p.photo)
+      ? `<img src="${esc(p.photo)}" alt="" onerror="this.parentElement.textContent='📦'">` : '📦';
+    return `<article class="item">
+      <div class="photo">${picture}</div><div class="item-main">
+        <div class="item-top"><div class="item-name">${esc(p.name)}</div><span class="badge ${badge}">${esc(p.status)}</span></div>
+        <div class="item-meta">${esc(p.category)}${p.size?' · '+esc(p.size):''}${p.batch?' · '+esc(p.batch):''}<br>Себестоимость: ${money(cost(p))}</div>
+        <div class="item-bottom"><div><div class="profit ${profit(p)>=0?'green':'red'}">${isSold(p)?'Прибыль ':'Цена '}${money(isSold(p)?profit(p):p.sell)}</div><div class="roi">ROI ${roi(p).toFixed(1)}%</div></div></div>
+        <div class="item-actions"><button class="icon-btn" onclick="editItem('${p.id}')">✎ Изменить</button>
+        ${p.listing&&/^https?:\/\//i.test(p.listing)?`<button class="icon-btn" onclick="openListing('${p.id}')">↗ Объявление</button>`:''}
+        <button class="icon-btn" onclick="deleteItem('${p.id}')">Удалить</button></div>
+      </div></article>`;
+  }).join('') : `<div class="empty"><div>🗃️</div>Ничего не найдено.<br>Попробуй другой запрос или добавь товар.</div>`;
+}
+function renderAnalytics(){
+  const counts=statuses.map(s=>({name:s,count:products.filter(p=>p.status===s).length}));
+  $('statusStats').innerHTML=counts.map(s=>`<div class="row"><span class="name">${esc(s.name)}</span><span class="number">${s.count}</span></div>`).join('');
+  const batches={};
+  products.forEach(p=>{const b=p.batch||'Без партии';batches[b]??={count:0,cost:0,profit:0,sold:0};batches[b].count++;batches[b].cost+=cost(p);if(isSold(p)){batches[b].profit+=profit(p);batches[b].sold++;}});
+  const entries=Object.entries(batches);
+  $('batchStats').innerHTML=entries.length?entries.map(([name,b])=>`<div class="row"><span class="name">${esc(name)}<br><small>${b.count} товаров · ${b.sold} продано</small></span><span class="number">${money(b.profit)}<br><small class="sub">прибыль</small></span></div>`).join(''):'<div class="sub">Пока нет партий</div>';
+}
+function refresh(){renderItems();updateStats();}
+function openAdd(){
+  $('productForm').reset();$('productId').value='';$('modalTitle').textContent='Новая вещь';
+  $('buy').value=0;$('shipping').value=0;$('other').value=0;$('sell').value=0;
+  updatePreview();$('productModal').classList.add('open');
+}
+function editItem(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
+  $('modalTitle').textContent='Редактировать вещь';
+  $('productId').value=p.id;
+  ['name','category','size','batch','status'].forEach(k=>$(k).value=p[k]|| (k==='status'?statuses[0]:''));
+  $('buy').value=p.buy||0;$('shipping').value=p.shipping||0;$('other').value=p.other||0;$('sell').value=p.sell||0;
+  $('photo').value=p.photo||'';$('listing').value=p.listing||'';
+  updatePreview();$('productModal').classList.add('open');
+}
+function closeModal(){$('productModal').classList.remove('open');}
+function updatePreview(){
+  const c=num('buy')+num('shipping')+num('other'),pr=num('sell')-c;
+  $('previewCost').textContent=money(c);$('previewProfit').textContent=money(pr);
+  $('previewProfit').className='number '+(pr>=0?'green':'red');
+  $('previewRoi').textContent=(c?pr/c*100:0).toFixed(1)+'%';
+}
+['buy','shipping','other','sell'].forEach(id=>$(id).addEventListener('input',updatePreview));
+$('productForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const id=$('productId').value||String(Date.now());
+  const old=products.find(p=>p.id===id);
+  const status=$('status').value;
+  const p={
+    id,name:$('name').value.trim(),category:$('category').value,size:$('size').value.trim(),
+    batch:$('batch').value.trim(),buy:num('buy'),shipping:num('shipping'),other:num('other'),
+    sell:num('sell'),status,photo:$('photo').value.trim(),listing:$('listing').value.trim(),
+    date:status==='Продан'?(old?.date||new Date().toISOString().slice(0,10)):''
+  };
+  if(old)products=products.map(x=>x.id===id?p:x);else products.unshift(p);
+  save();refresh();closeModal();
+});
+function deleteItem(id){
+  if(!confirm('Удалить этот товар из демо-каталога?'))return;
+  products=products.filter(p=>p.id!==id);save();refresh();
+}
+function openListing(id){
+  const p=products.find(x=>x.id===id);
+  if(p&&/^https?:\/\//i.test(p.listing))window.open(p.listing,'_blank','noopener,noreferrer');
+}
+function resetDemo(){
+  if(!confirm('Очистить все локальные данные приложения?'))return;
+  products=[];save();refresh();
+}
+$('filters').addEventListener('click',e=>{
+  const b=e.target.closest('[data-filter]');if(!b)return;
+  currentFilter=b.dataset.filter;
+  document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x===b));
+  renderItems();
+});
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===b.dataset.page));
+  if(b.dataset.page==='analyticsPage')renderAnalytics();
+}));
+$('today').textContent=new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+
+/* Поддержка цветовой темы Telegram. */
+(function(){
+  const tg=window.Telegram?.WebApp;
+  if(!tg)return;
+  tg.ready();tg.expand();
+  function applyTheme(){
+    const t=tg.themeParams||{};
+    const root=document.documentElement;
+    const set=(key,value)=>{if(value)root.style.setProperty(key,value)};
+    set('--bg',t.bg_color);set('--panel',t.secondary_bg_color);
+    set('--text',t.text_color);set('--muted',t.hint_color);
+    set('--accent',t.button_color);set('--accentText',t.button_text_color);
+    if(tg.colorScheme==='light')root.style.colorScheme='light';
+    else root.style.colorScheme='dark';
+  }
+  applyTheme();
+  tg.onEvent?.('themeChanged',applyTheme);
+})();
+refresh();
+</script>
+</body>
+</html>
